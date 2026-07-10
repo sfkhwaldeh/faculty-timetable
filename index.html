@@ -70,6 +70,12 @@ h1,h2,h3{ line-height:1.35; margin:0; }
 .logo-slot{ flex:0 0 auto; text-align:center; display:flex; flex-direction:column; align-items:center; gap:0.25rem; }
 .logo-slot img{ max-height:4.2rem; max-width:9rem; display:block; }
 .logo-slot .logo-btn{ font-size:0.75rem; }
+.college-picker{
+  margin-top:0.35rem;
+  width:auto; max-width:100%;
+  font-size:0.85rem; min-height:2.1rem; padding:0.2rem 0.5rem;
+  border:1.5px solid var(--line); color:var(--muted); font-weight:600;
+}
 
 header.app{
   border-bottom:1.5px solid var(--line);
@@ -350,7 +356,7 @@ td .row-actions{ display:flex; gap:0.35rem; }
   @page{ size: A4 landscape; margin:1cm 1.2cm; }
   html{ font-size:13px; }
   .skip-link, header.app .toolbar, .card, .filters, .view-switch, .counter, .stats,
-  td .row-actions, th.actions-col, th .sort-ind, .fcard .card-print, .logo-btn, #toast{ display:none !important; }
+  td .row-actions, th.actions-col, th .sort-ind, .fcard .card-print, .logo-btn, .college-picker, #toast{ display:none !important; }
   .logo-slot img{ max-height:2.4cm; }
   .wrap{ max-width:none; padding:0; }
   .uni-header{ border-bottom:1.5px solid #000; padding:0 0 0.5rem; }
@@ -399,6 +405,11 @@ td .row-actions{ display:flex; gap:0.35rem; }
   .print-page table{ width:100%; border-collapse:collapse; font-size:0.98rem; }
   .print-page th{ text-align:right; color:#000; border-bottom:1.5px solid #000; padding:0.4rem 0.6rem; }
   .print-page td{ padding:0.4rem 0.6rem; border-bottom:0.5pt solid #999; vertical-align:top; }
+  .print-page tr.day-group td{
+    font-weight:800; color:#000;
+    border-bottom:1px solid #000;
+    padding-top:0.7rem;
+  }
   .pp-total{ margin-top:0.5rem; font-size:0.9rem; font-weight:700; color:#000; }
 }
 </style>
@@ -411,6 +422,9 @@ td .row-actions{ display:flex; gap:0.35rem; }
     <div class="ar">
       <div class="uni" id="uniAr" contenteditable="true" spellcheck="false" title="انقر للتعديل">الجامعة الأردنية — فرع العقبة</div>
       <div class="fac" id="facAr" contenteditable="true" spellcheck="false" title="انقر للتعديل">كلية النظم وتكنولوجيا المعلومات</div>
+      <select id="collegePicker" class="college-picker" title="اختيار الكلية — يحدّث الترويسة بالعربية والإنجليزية" aria-label="اختيار الكلية">
+        <option value="">— اختر الكلية —</option>
+      </select>
     </div>
     <div class="logo-slot">
       <img id="logoImg" src="logo.png" alt="شعار الجامعة الأردنية"
@@ -421,7 +435,7 @@ td .row-actions{ display:flex; gap:0.35rem; }
     </div>
     <div class="en">
       <div class="uni" id="uniEn" contenteditable="true" spellcheck="false" title="Click to edit">University of Jordan — Aqaba Branch</div>
-      <div class="fac" id="facEn" contenteditable="true" spellcheck="false" title="Click to edit">Faculty of Systems and Information Technology</div>
+      <div class="fac" id="facEn" contenteditable="true" spellcheck="false" title="Click to edit">School of Information Technology and Systems</div>
     </div>
   </div>
 
@@ -917,7 +931,14 @@ $('csvFile').addEventListener('change', function(){
         const j = idx(col);
         if(j < 0) return;
         const v = data.slice(1).map(r => (r[j] || '').trim()).find(Boolean);
-        if(v) $(elId).textContent = v;
+        if(v){
+          $(elId).textContent = v;
+          if(elId === 'facAr'){
+            const f = COLLEGES.findIndex(c => c.ar === v);
+            $('collegePicker').value = f >= 0 ? String(f) : '';
+            if(f >= 0) $('facEn').textContent = COLLEGES[f].en;
+          }
+        }
       };
       meta('college', 'facAr');   meta('collegeen', 'facEn');
       meta('university', 'uniAr'); meta('universityen', 'uniEn');
@@ -1156,6 +1177,35 @@ function printOne(name){
 }
 
 /* ============================================================
+   COLLEGES — University of Jordan, Aqaba Branch
+   ============================================================ */
+const COLLEGES = [
+  { ar:'كلية الأعمال',                      en:'School of Business' },
+  { ar:'كلية السياحة والفندقة',             en:'School of Tourism and Hospitality' },
+  { ar:'كلية الحقوق',                        en:'School of Law' },
+  { ar:'كلية اللغات',                        en:'School of Languages' },
+  { ar:'كلية العلوم الأساسية والبحرية',      en:'School of Basic and Marine Sciences' },
+  { ar:'كلية النظم وتكنولوجيا المعلومات',    en:'School of Information Technology and Systems' },
+  { ar:'كلية التمريض',                       en:'School of Nursing' }
+];
+(function initCollegePicker(){
+  const sel = $('collegePicker');
+  sel.innerHTML = '<option value="">— اختر الكلية —</option>' +
+    COLLEGES.map((c, i) => `<option value="${i}">${esc(c.ar)}</option>`).join('');
+  /* preselect the current header college if it matches */
+  const cur = $('facAr').textContent.trim();
+  const found = COLLEGES.findIndex(c => c.ar === cur);
+  if(found >= 0) sel.value = String(found);
+  sel.addEventListener('change', () => {
+    if(sel.value === '') return;
+    const c = COLLEGES[+sel.value];
+    $('facAr').textContent = c.ar;
+    $('facEn').textContent = c.en;
+    toast('تم تحديث الكلية: ' + c.ar + ' ✓');
+  });
+})();
+
+/* ============================================================
    LOGO — loads logo.png automatically if placed beside this file
    (e.g., in the same GitHub repo); or choose one via the button
    ============================================================ */
@@ -1196,11 +1246,32 @@ function buildPrintAll(){
   const groups = {};
   filteredRows().forEach(x => (groups[x.f] = groups[x.f] || []).push(x));
   const names = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'ar'));
-  const anyDays = rows.some(x => x.d);
+  /* ---- ordering helpers: day-pattern groups, then earliest time ---- */
+  const DAY_ORDER = ['ح','ن','ث','ر','خ'];
+  const dayKey = d => (d || '').trim().split(/\s+/).filter(Boolean)
+    .sort((a, b) => DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b)).join(' ');
+  const startMin = t => { const p = parseTime(t); return p ? p[0] : 9999; };
+  const groupRank = key => {
+    if(!key) return [99, 99, ''];                       /* undefined days last */
+    const codes = key.split(' ');
+    return [DAY_ORDER.indexOf(codes[0]), codes.length, key];
+  };
   let html = '';
   names.forEach(name => {
-    const items = groups[name].sort((a, b) =>
-      (a.k === 'office') - (b.k === 'office') || a.t.localeCompare(b.t));
+    /* bucket this faculty's items by day pattern */
+    const buckets = {};
+    groups[name].forEach(x => {
+      const key = dayKey(x.d);
+      (buckets[key] = buckets[key] || []).push(x);
+    });
+    const keys = Object.keys(buckets).sort((a, b) => {
+      const ra = groupRank(a), rb = groupRank(b);
+      return ra[0] - rb[0] || ra[1] - rb[1] || String(ra[2]).localeCompare(rb[2]);
+    });
+    /* office hours keep their NATURAL position: sorted purely by time within their day group */
+    keys.forEach(k => buckets[k].sort((a, b) =>
+      startMin(a.t) - startMin(b.t) || a.t.localeCompare(b.t)));
+    const showHeaders = keys.length > 1 || (keys.length === 1 && keys[0] !== '');
     html += '<section class="print-page">' +
       '<div class="pp-uni">' +
         '<div class="ar"><div class="uni">' + uniAr + '</div>' +
@@ -1214,17 +1285,24 @@ function buildPrintAll(){
       '<table><thead><tr><th style="width:7rem;">رقم المادة</th><th>المادة / النشاط</th>' +
       '<th>الأيام</th>' +
       '<th>الوقت</th><th>القاعة / المكتب</th></tr></thead><tbody>';
-    items.forEach(x => {
-      const isOff = x.k === 'office';
-      const courseCell = isOff
-        ? '<span class="badge-office">ساعات مكتبية</span>' + (x.c ? ' ' + esc(x.c) : '')
-        : esc(x.c);
-      html += '<tr><td><span class="course-code">' + esc(x.n || '—') + '</span></td>' +
-        '<td>' + courseCell + '</td>' +
-        '<td>' + (x.d ? esc(fmtDays(x.d)) : '—') + '</td>' +
-        '<td><span class="time-chip' + (isOff ? ' office' : '') + '">' + esc(x.t) + '</span></td>' +
-        '<td>' + esc(x.r) + '</td></tr>';
+    keys.forEach(k => {
+      if(showHeaders){
+        html += '<tr class="day-group"><td colspan="5">' +
+          (k ? 'أيام: ' + esc(fmtDays(k)) : 'أيام غير محددة') + '</td></tr>';
+      }
+      buckets[k].forEach(x => {
+        const isOff = x.k === 'office';
+        const courseCell = isOff
+          ? '<span class="badge-office">ساعات مكتبية</span>' + (x.c ? ' ' + esc(x.c) : '')
+          : esc(x.c);
+        html += '<tr><td><span class="course-code">' + esc(x.n || '—') + '</span></td>' +
+          '<td>' + courseCell + '</td>' +
+          '<td>' + (x.d ? esc(fmtDays(x.d)) : '—') + '</td>' +
+          '<td><span class="time-chip' + (isOff ? ' office' : '') + '">' + esc(x.t) + '</span></td>' +
+          '<td>' + esc(x.r) + '</td></tr>';
+      });
     });
+    const items = groups[name];
     const nLec = items.filter(x => x.k !== 'office').length;
     const nOff = items.length - nLec;
     html += '</tbody></table>' +
