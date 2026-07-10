@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الجدول الدراسي لأعضاء هيئة التدريس</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   1. TOKENS & BASE — ink-saving: white bg, color in borders/text only
+   ============================================================ */
+:root{
+  --ink:#1a1a1a;
+  --accent:#0f766e;
+  --accent-dark:#0b5a54;
+  --accent-tint:#f0faf9;      /* hover tint only — never printed */
+  --line:#c9c9c9;
+  --line-light:#e6e6e6;
+  --muted:#5a5a5a;
+  --danger:#b42318;
+  --warn:#a15c00;
+  --radius:0.5rem;
+  --focus:#0f766e;
+}
+html{ font-size:clamp(15px, calc(0.45vw + 13px), 19px); scroll-behavior:smooth; }
+*{ box-sizing:border-box; }
+body{
+  margin:0;
+  font-family:'Tajawal','Segoe UI', Tahoma, 'Noto Kufi Arabic', Arial, sans-serif;
+  color:var(--ink);
+  background:#fff;
+  line-height:1.65;
+}
+h1,h2,h3{ line-height:1.35; margin:0; }
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{ animation:none !important; transition:none !important; }
+  html{ scroll-behavior:auto; }
+}
+
+/* skip link (keyboard users) */
+.skip-link{
+  position:absolute; top:-3rem; right:1rem;
+  background:#fff; border:2px solid var(--accent); color:var(--accent-dark);
+  padding:0.4rem 0.9rem; border-radius:var(--radius); font-weight:700; z-index:100;
+  transition:top .15s;
+}
+.skip-link:focus{ top:0.5rem; }
+
+/* ============================================================
+   2. LAYOUT & HEADERS
+   ============================================================ */
+.wrap{ max-width:78rem; margin:0 auto; padding:1.25rem 1rem 4rem; }
+
+.uni-header{
+  display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center;
+  gap:0.5rem 1.5rem;
+  border-bottom:2px solid var(--accent);
+  padding:0.9rem 0 0.75rem;
+}
+.uni-header .ar, .uni-header .en{ flex:1 1 16rem; }
+.uni-header .ar{ text-align:right; }
+.uni-header .en{ text-align:left; direction:ltr; }
+.uni-header .uni{ font-size:1.15rem; font-weight:800; color:var(--accent-dark); }
+.uni-header .fac{ font-size:0.95rem; color:var(--muted); margin-top:0.1rem; }
+.uni-header [contenteditable]{ border-bottom:1px dashed transparent; }
+.uni-header [contenteditable]:hover{ border-bottom-color:var(--line); cursor:text; }
+.uni-header [contenteditable]:focus{ outline:2px solid var(--focus); outline-offset:2px; border-bottom-color:transparent; }
+.logo-slot{ flex:0 0 auto; text-align:center; display:flex; flex-direction:column; align-items:center; gap:0.25rem; }
+.logo-slot img{ max-height:4.2rem; max-width:9rem; display:block; }
+.logo-slot .logo-btn{ font-size:0.75rem; }
+
+header.app{
+  border-bottom:1.5px solid var(--line);
+  padding:0.75rem 0 1rem;
+  margin-bottom:1rem;
+  display:flex; flex-wrap:wrap; gap:0.75rem; align-items:flex-start; justify-content:space-between;
+}
+header.app h1{ font-size:1.45rem; color:var(--accent-dark); font-weight:800; }
+header.app .sub{ font-size:0.88rem; color:var(--muted); margin-top:0.15rem; }
+
+.semester-row{ display:flex; align-items:center; gap:0.5rem; margin-top:0.55rem; flex-wrap:wrap; }
+.semester-row .sem-label{ margin-bottom:0; font-size:0.95rem; }
+.semester-row select, .semester-row input{
+  width:auto; font-size:0.95rem; padding:0.3rem 0.6rem;
+  border-color:var(--accent); color:var(--accent-dark); font-weight:600;
+}
+.sem-print{ display:none; }
+
+.toolbar{ display:flex; flex-wrap:wrap; gap:0.5rem; }
+
+/* ============================================================
+   3. CONTROLS — outline style, generous touch targets
+   ============================================================ */
+button, .btn{
+  font:inherit; font-size:0.95rem; font-weight:700;
+  color:var(--accent-dark);
+  background:#fff;
+  border:1.5px solid var(--accent);
+  border-radius:var(--radius);
+  padding:0.45rem 0.9rem;
+  min-height:2.4rem;
+  cursor:pointer;
+  transition:background .15s, transform .05s;
+}
+button:hover{ background:var(--accent-tint); }
+button:active{ transform:translateY(1px); }
+button.primary{ background:var(--accent); color:#fff; }
+button.primary:hover{ background:var(--accent-dark); }
+button.ghost{ border-color:var(--line); color:var(--muted); }
+button.danger-btn{ border-color:var(--danger); color:var(--danger); }
+button.danger-btn:hover{ background:#fdf3f2; }
+button.small{ font-size:0.85rem; padding:0.25rem 0.6rem; min-height:2rem; }
+button:disabled{ opacity:0.45; cursor:not-allowed; }
+
+label{ display:block; font-size:0.9rem; font-weight:700; margin-bottom:0.25rem; color:var(--accent-dark); }
+input[type=text], select{
+  font:inherit; font-size:1rem;
+  width:100%;
+  padding:0.5rem 0.7rem;
+  min-height:2.6rem;
+  border:1.5px solid var(--line);
+  border-radius:var(--radius);
+  background:#fff;
+  color:var(--ink);
+}
+input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible{
+  outline:2.5px solid var(--focus);
+  outline-offset:2px;
+}
+input.invalid{ border-color:var(--danger); }
+.field-error{ display:none; font-size:0.8rem; color:var(--danger); margin-top:0.2rem; font-weight:600; }
+.field-error.show{ display:block; }
+kbd{
+  font-family:inherit; font-size:0.78rem;
+  border:1px solid var(--line); border-bottom-width:2px; border-radius:0.3rem;
+  padding:0 0.35rem; color:var(--muted); background:#fff;
+}
+
+/* ============================================================
+   4. ENTRY FORM CARD
+   ============================================================ */
+.card{
+  border:1.5px solid var(--line);
+  border-radius:var(--radius);
+  padding:1rem;
+  margin-bottom:1rem;
+}
+.card.editing{ border-color:var(--warn); }
+.card h2{
+  font-size:1.1rem; color:var(--accent-dark);
+  margin-bottom:0.75rem; border-bottom:1px solid var(--line-light); padding-bottom:0.4rem;
+  display:flex; justify-content:space-between; align-items:baseline; gap:0.5rem; flex-wrap:wrap;
+}
+.card h2 .kbd-hint{ font-size:0.78rem; color:var(--muted); font-weight:400; }
+.form-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap:0.75rem;
+  align-items:start;
+}
+.form-actions{ display:flex; gap:0.5rem; margin-top:0.9rem; flex-wrap:wrap; align-items:center; }
+.hint{ font-size:0.82rem; color:var(--muted); margin-top:0.5rem; }
+details.csv-help summary{
+  cursor:pointer; color:var(--accent-dark); font-size:0.85rem; font-weight:700;
+  margin-top:0.5rem; user-select:none;
+}
+details.csv-help[open] summary{ margin-bottom:0.25rem; }
+
+/* ============================================================
+   5. STATS + FILTERS + VIEW SWITCH
+   ============================================================ */
+.stats{
+  display:flex; flex-wrap:wrap; gap:0.5rem;
+  margin-bottom:0.9rem;
+}
+.stat{
+  border:1.5px solid var(--line);
+  border-radius:2rem;
+  padding:0.2rem 0.85rem;
+  font-size:0.88rem;
+  color:var(--muted);
+}
+.stat b{ color:var(--accent-dark); font-size:1rem; }
+.stat.warn-stat{ border-color:var(--warn); color:var(--warn); }
+.stat.warn-stat b{ color:var(--warn); }
+
+.filters{
+  display:flex; flex-wrap:wrap; gap:0.75rem; align-items:end;
+  margin-bottom:0.9rem;
+}
+.filters > div{ min-width:11rem; flex:1; }
+.search-wrap{ position:relative; }
+.search-wrap input{ padding-left:2.2rem; }
+.search-wrap .clear-search{
+  position:absolute; left:0.3rem; top:50%; transform:translateY(-50%);
+  border:none; min-height:0; padding:0.2rem 0.5rem; font-size:1.1rem; color:var(--muted);
+  display:none;
+}
+.search-wrap.has-value .clear-search{ display:block; }
+.view-switch{ display:flex; border:1.5px solid var(--accent); border-radius:var(--radius); overflow:hidden; }
+.view-switch button{ border:none; border-radius:0; min-height:2.6rem; }
+.view-switch button[aria-pressed="true"]{ background:var(--accent); color:#fff; }
+
+.counter{ font-size:0.9rem; color:var(--muted); margin-bottom:0.5rem; }
+.counter .filter-note{ color:var(--warn); font-weight:700; }
+
+/* ============================================================
+   6. TABLE VIEW — sticky header, sortable columns
+   ============================================================ */
+.table-wrap{
+  overflow:auto; max-height:70vh;
+  border:1.5px solid var(--line); border-radius:var(--radius);
+}
+table{ width:100%; border-collapse:collapse; font-size:0.98rem; }
+th{
+  position:sticky; top:0; z-index:2;
+  text-align:right;
+  color:var(--accent-dark);
+  font-size:0.92rem;
+  background:#fff;
+  border-bottom:2px solid var(--accent);
+  padding:0.55rem 0.7rem;
+  white-space:nowrap;
+}
+th.sortable{ cursor:pointer; user-select:none; }
+th.sortable:hover{ background:var(--accent-tint); }
+th .sort-ind{ font-size:0.75rem; opacity:0.85; }
+td{
+  padding:0.5rem 0.7rem;
+  border-bottom:1px solid var(--line-light);
+  vertical-align:top;
+}
+tbody tr:hover{ background:var(--accent-tint); }
+tbody tr.flash{ animation:flash 1.6s ease-out; }
+@keyframes flash{ 0%{ background:#dff3f1; } 100%{ background:transparent; } }
+td .row-actions{ display:flex; gap:0.35rem; }
+.time-chip{
+  display:inline-block;
+  border:1px solid var(--accent);
+  color:var(--accent-dark);
+  border-radius:1rem;
+  padding:0.05rem 0.6rem;
+  font-size:0.88rem;
+  white-space:nowrap;
+  direction:ltr; unicode-bidi:embed;
+}
+.time-chip.office{ border-style:dashed; border-color:var(--warn); color:var(--warn); }
+.badge-office{
+  display:inline-block;
+  border:1px solid var(--warn);
+  color:var(--warn);
+  border-radius:0.3rem;
+  padding:0 0.45rem;
+  font-size:0.82rem;
+  font-weight:700;
+  white-space:nowrap;
+}
+.conflict{
+  color:var(--danger); font-weight:700; font-size:0.85rem;
+  border:1px solid var(--danger); border-radius:0.3rem; padding:0 0.4rem;
+  white-space:nowrap;
+}
+.faculty-name{ font-weight:700; }
+.course-code{ color:var(--muted); font-size:0.85rem; direction:ltr; unicode-bidi:embed; }
+
+/* ============================================================
+   7. FACULTY CARDS VIEW
+   ============================================================ */
+.faculty-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap:1rem;
+}
+.fcard{
+  border:1.5px solid var(--line);
+  border-radius:var(--radius);
+  padding:0.85rem 1rem;
+  break-inside:avoid;
+}
+.fcard h3{
+  font-size:1.05rem;
+  color:var(--accent-dark);
+  border-bottom:2px solid var(--accent);
+  padding-bottom:0.35rem;
+  margin-bottom:0.6rem;
+  display:flex; justify-content:space-between; align-items:baseline; gap:0.5rem;
+}
+.fcard h3 .load{ font-size:0.8rem; color:var(--muted); font-weight:400; white-space:nowrap; }
+.fcard ul{ list-style:none; margin:0; padding:0; }
+.fcard li{
+  padding:0.45rem 0;
+  border-bottom:1px dashed var(--line-light);
+  display:flex; flex-wrap:wrap; gap:0.35rem 0.6rem; align-items:baseline;
+}
+.fcard li:last-child{ border-bottom:none; }
+.fcard .c-name{ flex:1 1 10rem; }
+.fcard .c-room{ font-size:0.88rem; color:var(--muted); white-space:nowrap; }
+.fcard .card-print{ margin-top:0.6rem; }
+
+/* ============================================================
+   8. EMPTY STATE + TOAST (with undo action)
+   ============================================================ */
+.empty{
+  border:1.5px dashed var(--line);
+  border-radius:var(--radius);
+  padding:2.5rem 1rem;
+  text-align:center;
+  color:var(--muted);
+}
+.empty .empty-actions{ margin-top:1rem; display:flex; gap:0.6rem; justify-content:center; flex-wrap:wrap; }
+
+#toast{
+  position:fixed; bottom:1rem; right:50%; transform:translateX(50%);
+  background:#fff; border:1.5px solid var(--accent); color:var(--accent-dark);
+  border-radius:var(--radius); padding:0.5rem 1.1rem; font-weight:700;
+  box-shadow:0 2px 10px rgba(0,0,0,0.1);
+  opacity:0; pointer-events:none; transition:opacity .25s;
+  z-index:50; font-size:0.95rem;
+  display:flex; gap:0.7rem; align-items:center;
+}
+#toast.show{ opacity:1; pointer-events:auto; }
+#toast.err{ border-color:var(--danger); color:var(--danger); }
+#toast button{ min-height:0; padding:0.15rem 0.7rem; font-size:0.88rem; }
+
+#printAll{ display:none; }
+
+/* larger touch targets on small screens */
+@media (max-width: 600px){
+  button.small{ min-height:2.5rem; padding:0.4rem 0.8rem; }
+  .table-wrap{ max-height:none; }
+}
+
+/* ============================================================
+   9. PRINT — A4 landscape, black only, one faculty per page
+   ============================================================ */
+@media print{
+  @page{ size: A4 landscape; margin:1cm 1.2cm; }
+  html{ font-size:13px; }
+  .skip-link, header.app .toolbar, .card, .filters, .view-switch, .counter, .stats,
+  td .row-actions, th.actions-col, th .sort-ind, .fcard .card-print, .logo-btn, #toast{ display:none !important; }
+  .logo-slot img{ max-height:2.4cm; }
+  .wrap{ max-width:none; padding:0; }
+  .uni-header{ border-bottom:1.5px solid #000; padding:0 0 0.5rem; }
+  .uni-header .uni, .uni-header .fac{ color:#000; }
+  header.app{ border-bottom:none; margin-bottom:0.8rem; padding-bottom:0; }
+  header.app h1{ color:#000; font-size:1.25rem; }
+  header.app .sub{ display:none; }
+  .semester-row select, .semester-row input, .semester-row .sem-label{ display:none; }
+  .sem-print{ display:inline; color:#000; font-size:1rem; font-weight:700; }
+  .table-wrap{ border:none; overflow:visible; max-height:none; }
+  table{ font-size:0.95rem; }
+  th{ position:static; color:#000; border-bottom:1.5px solid #000; }
+  td{ border-bottom:0.5pt solid #999; }
+  tbody tr:hover{ background:none; }
+  .time-chip{ border:0.5pt solid #000; color:#000; }
+  .time-chip.office{ border-style:dashed; }
+  .badge-office{ border:0.5pt solid #000; color:#000; }
+  .conflict{ border-color:#000; color:#000; }
+  .faculty-grid{ grid-template-columns:repeat(3, 1fr); gap:0.6rem; }
+  .fcard{ border:0.75pt solid #666; page-break-inside:avoid; }
+  .fcard h3{ color:#000; border-bottom-color:#000; }
+  a{ text-decoration:none; color:#000; }
+
+  /* ---- one faculty member per page (printing "الجميع") ---- */
+  body.print-per-faculty .uni-header,
+  body.print-per-faculty header.app,
+  body.print-per-faculty #content{ display:none !important; }
+  body.print-per-faculty #printAll{ display:block; }
+
+  .print-page{ page-break-after:always; }
+  .print-page:last-child{ page-break-after:auto; }
+  .pp-uni{
+    display:flex; justify-content:space-between; align-items:center; gap:1rem;
+    border-bottom:1.5px solid #000; padding-bottom:0.4rem; margin-bottom:0.4rem;
+  }
+  .pp-uni .en{ direction:ltr; text-align:left; }
+  .pp-logo img{ max-height:2.2cm; max-width:4.5cm; display:block; margin:0 auto; }
+  .pp-uni .uni{ font-size:1.05rem; font-weight:800; color:#000; }
+  .pp-uni .fac{ font-size:0.9rem; color:#000; }
+  .pp-sem{ text-align:center; font-weight:700; font-size:0.95rem; margin-bottom:0.5rem; color:#000; }
+  .pp-name{
+    font-size:1.2rem; color:#000; text-align:center;
+    border:1px solid #000; border-radius:0.4rem;
+    padding:0.25rem 0.6rem; margin:0 auto 0.7rem; width:fit-content;
+  }
+  .print-page table{ width:100%; border-collapse:collapse; font-size:0.98rem; }
+  .print-page th{ text-align:right; color:#000; border-bottom:1.5px solid #000; padding:0.4rem 0.6rem; }
+  .print-page td{ padding:0.4rem 0.6rem; border-bottom:0.5pt solid #999; vertical-align:top; }
+  .pp-total{ margin-top:0.5rem; font-size:0.9rem; font-weight:700; color:#000; }
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#content">تخطّي إلى الجدول</a>
+<div class="wrap">
+
+  <div class="uni-header">
+    <div class="ar">
+      <div class="uni" id="uniAr" contenteditable="true" spellcheck="false" title="انقر للتعديل">الجامعة الأردنية — فرع العقبة</div>
+      <div class="fac" id="facAr" contenteditable="true" spellcheck="false" title="انقر للتعديل">كلية النظم وتكنولوجيا المعلومات</div>
+    </div>
+    <div class="logo-slot">
+      <img id="logoImg" src="logo.png" alt="شعار الجامعة الأردنية"
+           onerror="this.dataset.missing='1'; this.style.display='none';"
+           onload="this.dataset.missing=''; this.style.display='';">
+      <button class="small ghost logo-btn" onclick="document.getElementById('logoFile').click()" title="تحميل شعار الجامعة (يظهر في الترويسة والطباعة)">🏛 الشعار</button>
+      <input type="file" id="logoFile" accept="image/*" style="display:none" aria-hidden="true">
+    </div>
+    <div class="en">
+      <div class="uni" id="uniEn" contenteditable="true" spellcheck="false" title="Click to edit">University of Jordan — Aqaba Branch</div>
+      <div class="fac" id="facEn" contenteditable="true" spellcheck="false" title="Click to edit">Faculty of Systems and Information Technology</div>
+    </div>
+  </div>
+
+  <header class="app">
+    <div>
+      <h1>الجدول الدراسي لأعضاء هيئة التدريس</h1>
+      <div class="sub">إدخال واستيراد وتصدير بيانات الجدول — تصميم موفّر للحبر عند الطباعة</div>
+      <div class="semester-row">
+        <label for="semester" class="sem-label">الفصل الدراسي:</label>
+        <select id="semester" onchange="updateSemester()">
+          <option value="الفصل الدراسي الأول (الخريفي) — First Semester (Fall)">الفصل الأول (الخريفي) — First (Fall)</option>
+          <option value="الفصل الدراسي الثاني (الربيعي) — Second Semester (Spring)">الفصل الثاني (الربيعي) — Second (Spring)</option>
+          <option value="الفصل الدراسي الصيفي — Summer Semester">الفصل الصيفي — Summer</option>
+        </select>
+        <label for="acadYear" class="sem-label">العام الجامعي:</label>
+        <input type="text" id="acadYear" value="2026/2025" oninput="updateSemester()"
+               style="direction:ltr; text-align:center; width:7.5rem;" placeholder="2026/2025">
+        <span id="semesterPrint" class="sem-print"></span>
+      </div>
+    </div>
+    <div class="toolbar" role="toolbar" aria-label="أدوات الملف">
+      <button class="primary" onclick="document.getElementById('csvFile').click()" title="استيراد ملف CSV من جهازك">📥 استيراد CSV</button>
+      <input type="file" id="csvFile" accept=".csv,text/csv" style="display:none" aria-hidden="true">
+      <button onclick="exportCSV()" id="exportBtn" title="تنزيل البيانات كملف CSV">📤 تصدير CSV</button>
+      <button onclick="window.print()" title="طباعة (كل أستاذ في صفحة عند اختيار الجميع)">🖨️ طباعة</button>
+      <button class="danger-btn" onclick="clearAll()" id="clearBtn" title="مسح جميع البيانات من الصفحة">🗑️ مسح الكل</button>
+    </div>
+  </header>
+
+  <!-- ===================== ENTRY FORM ===================== -->
+  <section class="card" id="entryCard" aria-labelledby="formTitle">
+    <h2>
+      <span id="formTitle">إضافة محاضرة / ساعات مكتبية</span>
+      <span class="kbd-hint"><kbd>Enter</kbd> إضافة &nbsp;•&nbsp; <kbd>Esc</kbd> إلغاء التعديل &nbsp;•&nbsp; <kbd>/</kbd> بحث</span>
+    </h2>
+    <div class="form-grid">
+      <div>
+        <label for="fType">النوع</label>
+        <select id="fType" onchange="onTypeChange()">
+          <option value="lecture">محاضرة</option>
+          <option value="office">ساعات مكتبية</option>
+        </select>
+      </div>
+      <div>
+        <label for="fFaculty">عضو هيئة التدريس <span aria-hidden="true" style="color:var(--danger)">*</span></label>
+        <input type="text" id="fFaculty" list="facultyList" placeholder="مثال: رامي الخوالدة"
+               autocomplete="off" aria-required="true" aria-describedby="errFaculty">
+        <datalist id="facultyList"></datalist>
+        <div class="field-error" id="errFaculty" role="alert">هذا الحقل مطلوب</div>
+      </div>
+      <div style="max-width:9rem;">
+        <label for="fNum">رقم المادة</label>
+        <input type="text" id="fNum" list="numList" placeholder="5401103"
+               style="direction:ltr; text-align:left;" autocomplete="off" inputmode="numeric">
+        <datalist id="numList"></datalist>
+      </div>
+      <div>
+        <label for="fCourse" id="courseLabel">اسم المادة <span aria-hidden="true" style="color:var(--danger)">*</span></label>
+        <input type="text" id="fCourse" placeholder="مثال: مقدمة في البرمجة"
+               autocomplete="off" aria-describedby="errCourse">
+        <div class="field-error" id="errCourse" role="alert">يرجى إدخال اسم المادة</div>
+      </div>
+      <div>
+        <label for="fDays">الأيام (اختياري)</label>
+        <select id="fDays">
+          <option value="">— غير محدد —</option>
+          <option>ح ث خ</option>
+          <option>ن ر</option>
+          <option>ح ث</option>
+          <option>ث خ</option>
+          <option>الأحد</option>
+          <option>الاثنين</option>
+          <option>الثلاثاء</option>
+          <option>الأربعاء</option>
+          <option>الخميس</option>
+          <option>يوميًا</option>
+        </select>
+      </div>
+      <div>
+        <label for="fTime">الوقت</label>
+        <input type="text" id="fTime" list="timeList" placeholder="08:00 - 09:15"
+               style="direction:ltr; text-align:left;" autocomplete="off" aria-describedby="errTime">
+        <datalist id="timeList">
+          <option>08:00 - 09:15</option><option>09:15 - 10:30</option>
+          <option>10:30 - 11:45</option><option>11:45 - 13:00</option>
+          <option>13:00 - 14:15</option><option>14:15 - 15:30</option>
+          <option>15:30 - 16:45</option><option>16:45 - 18:00</option>
+        </datalist>
+        <div class="field-error" id="errTime" role="alert">يرجى إدخال وقت الساعات المكتبية</div>
+      </div>
+      <div>
+        <label for="fRoom" id="roomLabel">القاعة</label>
+        <input type="text" id="fRoom" list="roomList" placeholder="مثال: مختبر 207" autocomplete="off">
+        <datalist id="roomList"></datalist>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="primary" id="saveBtn" onclick="saveEntry()">➕ إضافة</button>
+      <button class="ghost" id="cancelBtn" onclick="cancelEdit()" style="display:none">إلغاء التعديل (Esc)</button>
+      <span class="hint" id="conflictHint" style="display:none; color:var(--warn); font-weight:700;"></span>
+    </div>
+    <details class="csv-help">
+      <summary>صيغة ملف CSV المدعومة</summary>
+      <div class="hint">
+        الأعمدة المطلوبة: <bdo dir="ltr">Faculty, Course, Time, Classroom</bdo> — أعمدة اختيارية:
+        <bdo dir="ltr">CourseNo</bdo> (رقم المادة — وإن غاب يُفصل الرقم تلقائيًا من بداية اسم المادة)،
+        <bdo dir="ltr">Days</bdo>، <bdo dir="ltr">Type</bdo> (<bdo dir="ltr">Lecture</bdo> / <bdo dir="ltr">Office Hours</bdo>)،
+        و <bdo dir="ltr">College / CollegeEn / University / UniversityEn</bdo> لتحديث أسماء الكلية والجامعة في الترويسة من الملف مباشرة.
+        البيانات محفوظة داخل الصفحة أثناء العمل — استخدم «تصدير CSV» لحفظ نسخة دائمة على جهازك.
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== STATS ===================== -->
+  <div class="stats" id="stats" aria-label="ملخص الجدول"></div>
+
+  <!-- ===================== FILTERS ===================== -->
+  <div class="filters">
+    <div>
+      <label for="filterFaculty">تصفية حسب عضو هيئة التدريس</label>
+      <select id="filterFaculty" onchange="render()"><option value="">الجميع</option></select>
+    </div>
+    <div style="flex:0.6; min-width:10rem;">
+      <label for="filterType">النوع</label>
+      <select id="filterType" onchange="render()">
+        <option value="">الكل</option>
+        <option value="lecture">المحاضرات فقط</option>
+        <option value="office">الساعات المكتبية فقط</option>
+      </select>
+    </div>
+    <div>
+      <label for="searchBox">بحث (مادة / قاعة / وقت)</label>
+      <div class="search-wrap" id="searchWrap">
+        <input type="text" id="searchBox" placeholder="اكتب للبحث... ( / )" oninput="onSearch()" autocomplete="off">
+        <button class="clear-search" onclick="clearSearch()" aria-label="مسح البحث" title="مسح البحث">✕</button>
+      </div>
+    </div>
+    <div style="flex:0">
+      <label id="viewLabel">طريقة العرض</label>
+      <div class="view-switch" role="group" aria-labelledby="viewLabel">
+        <button id="btnTable" aria-pressed="true" onclick="setView('table')">جدول</button>
+        <button id="btnCards" aria-pressed="false" onclick="setView('cards')">حسب الأستاذ</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="counter" id="counter" aria-live="polite"></div>
+  <div id="content"></div>
+  <div id="printAll" aria-hidden="true"></div>
+
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ============================================================
+   DATA — preloaded from the imported timetable
+   entry: {k: ''|'office', f, n(course no.), c(course name), d, t, r}
+   ============================================================ */
+let rows = [
+  {k:"", f:"احمد الصرايره", n:"5400301", c:"وسائل التواصل الاجتماعي", d:"", t:"11:45 - 13:00", r:"إدارة ق/209"},
+  {k:"", f:"احمد الصرايره", n:"5401275", c:"الجبر الخطي لعلوم الحاسبات", d:"", t:"08:00 - 09:15", r:"ادارة ق147/ ط-1"},
+  {k:"", f:"رامي الخوالدة", n:"5401103", c:"مقدمة في البرمجة", d:"", t:"08:00 - 09:15", r:"مختبر 207"},
+  {k:"", f:"رامي الخوالدة", n:"5401215", c:"برمجة متقدمة", d:"", t:"10:30 - 11:45", r:"مختبر 207"},
+  {k:"", f:"رامي الخوالدة", n:"5402205", c:"المهارات الرقمية الحديثة (شعبة 2)", d:"", t:"09:15 - 10:30", r:"إدارة ق/217"},
+  {k:"", f:"اسماعيل الطهاروه", n:"5401234", c:"التشفير و تحليل الشفرات", d:"", t:"10:30 - 11:45", r:"إدارة ق/219"},
+  {k:"", f:"اسماعيل الطهاروه", n:"5401375", c:"أمن البنية التحتية باستخدام لينكس", d:"", t:"11:45 - 13:00", r:"مختبر 223"},
+  {k:"", f:"اسماعيل الطهاروه", n:"5401415", c:"مستودعات البيانات والتنقيب عن البيانات", d:"", t:"08:00 - 09:15", r:"مختبر 223"},
+  {k:"", f:"خالد الدبعي", n:"5401321", c:"نظم قواعد البيانات", d:"", t:"08:00 - 09:15", r:"مختبر 205"},
+  {k:"", f:"ايفون ابو تايه", n:"5401341", c:"نظرية الخوارزميات", d:"", t:"09:15 - 10:30", r:"مختبر 208"},
+  {k:"", f:"ايفون ابو تايه", n:"5401342", c:"الذكاء الاصطناعي", d:"", t:"11:45 - 13:00", r:"مختبر 206"},
+  {k:"", f:"ايفون ابو تايه", n:"5402455", c:"نظم ادارة المعرفة", d:"", t:"16:45 - 18:00", r:"غير محدد"},
+  {k:"", f:"سفيان الغزيوات / الخوالده", n:"5401353", c:"تفاعل الإنسان مع الحاسوب", d:"", t:"09:15 - 10:30", r:"مختبر 207"},
+  {k:"", f:"سفيان الغزيوات / الخوالده", n:"5402205", c:"المهارات الرقمية الحديثة (شعبة 1)", d:"", t:"11:45 - 13:00", r:"إدارة ق/217"},
+  {k:"", f:"سفيان الغزيوات / الخوالده", n:"5402498", c:"التدريب", d:"", t:"22:45 - 23:59", r:"غير محدد"},
+  {k:"", f:"سفيان الغزيوات / الخوالده", n:"5411099", c:"أساسيات الحاسوب (شعبة 2)", d:"", t:"10:30 - 11:45", r:"مختبر 206"},
+  {k:"", f:"معاذ ابو فرج", n:"5401361", c:"شبكات الحاسوب (1)", d:"", t:"10:30 - 11:45", r:"ادارة ق142/ ط-1"},
+  {k:"", f:"معاذ ابو فرج", n:"5401473", c:"نظم التشغيل", d:"", t:"13:00 - 14:15", r:"مختبر 207"},
+  {k:"", f:"نزيه غطاشه", n:"5401446", c:"استرجاع المعلومات", d:"", t:"10:30 - 11:45", r:"مختبر 208"},
+  {k:"", f:"نزيه غطاشه", n:"5402121", c:"تطوير تطبيقات الويب (1)", d:"", t:"13:00 - 14:15", r:"مختبر 205"},
+  {k:"", f:"نزيه غطاشه", n:"5402354", c:"الأعمال الإلكترونية", d:"", t:"08:00 - 09:15", r:"مختبر 208"},
+  {k:"", f:"عبدالله الحاج", n:"5401462", c:"أمن الشبكات", d:"", t:"13:00 - 14:15", r:"مختبر 208"},
+  {k:"", f:"عبدالله الحاج", n:"5402232", c:"انظمة المعلومات الادارية", d:"", t:"09:15 - 10:30", r:"مختبر 206"},
+  {k:"", f:"عرابي المناصير", n:"5402353", c:"تطوير تطبيقات الويب (2)", d:"", t:"11:45 - 13:00", r:"مختبر 207"},
+  {k:"", f:"عرابي المناصير", n:"5411099", c:"أساسيات الحاسوب (شعبة 1)", d:"", t:"08:00 - 09:15", r:"مختبر 206"},
+  {k:"", f:"هبه الرواشدة", n:"5410101", c:"الثقافة الرقمية", d:"", t:"09:15 - 10:30", r:"إدارة ق/222"},
+  {k:"", f:"محاضر غير متفرغ", n:"5402205", c:"(شعبة 3)", d:"", t:"11:45 - 13:00", r:"إدارة ق/221"},
+  {k:"", f:"محاضر غير متفرغ", n:"5411099", c:"(شعبة 3)", d:"", t:"13:00 - 14:15", r:"مختبر 206"}
+];
+
+let view = 'table';
+let editIndex = -1;
+let sortKey = 'f';            // f | c | t | r
+let sortDir = 1;              // 1 asc, -1 desc
+let lastDeleted = null;       // {entry, index} for undo
+let lastSavedIndex = -1;      // for row flash feedback
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+/* toast with optional action button (undo pattern) */
+function toast(msg, isErr, actionLabel, actionFn){
+  const t = $('toast');
+  t.innerHTML = esc(msg);
+  if(actionLabel){
+    const b = document.createElement('button');
+    b.textContent = actionLabel;
+    b.onclick = () => { actionFn(); t.className = ''; };
+    t.appendChild(b);
+  }
+  t.className = 'show' + (isErr ? ' err' : '');
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.className = '', actionLabel ? 6000 : 2600);
+}
+
+/* time parsing for conflict detection: "HH:MM - HH:MM" -> [start,end] minutes */
+function parseTime(t){
+  const m = /(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/.exec(t || '');
+  if(!m) return null;
+  const a = (+m[1])*60 + (+m[2]), b = (+m[3])*60 + (+m[4]);
+  return b > a ? [a, b] : null;
+}
+
+/* returns Set of row indices that conflict (same faculty, same/overlapping days, overlapping time) */
+function daysOverlap(d1, d2){
+  d1 = (d1 || '').trim(); d2 = (d2 || '').trim();
+  if(!d1 || !d2) return true;            /* unknown days → assume same days (conservative) */
+  if(d1 === d2) return true;
+  const set1 = d1.split(/\s+/), set2 = d2.split(/\s+/);
+  return set1.some(x => set2.includes(x));
+}
+function findConflicts(){
+  const conflicts = new Set();
+  const byFac = {};
+  rows.forEach((x, i) => (byFac[x.f] = byFac[x.f] || []).push(i));
+  Object.values(byFac).forEach(idxs => {
+    for(let a = 0; a < idxs.length; a++){
+      const ta = parseTime(rows[idxs[a]].t);
+      if(!ta) continue;
+      for(let b = a + 1; b < idxs.length; b++){
+        const tb = parseTime(rows[idxs[b]].t);
+        if(!tb) continue;
+        if(ta[0] < tb[1] && tb[0] < ta[1] && daysOverlap(rows[idxs[a]].d, rows[idxs[b]].d)){
+          conflicts.add(idxs[a]); conflicts.add(idxs[b]);
+        }
+      }
+    }
+  });
+  return conflicts;
+}
+
+function refreshDatalists(){
+  const set = (id, values) => {
+    $(id).innerHTML = [...new Set(values)].filter(Boolean).sort()
+      .map(v => `<option value="${esc(v)}">`).join('');
+  };
+  set('facultyList', rows.map(x => x.f));
+  set('roomList',    rows.map(x => x.r));
+  set('numList',     rows.map(x => x.n));
+  const cur = $('filterFaculty').value;
+  const names = [...new Set(rows.map(x => x.f))].filter(Boolean).sort();
+  $('filterFaculty').innerHTML = '<option value="">الجميع</option>' +
+    names.map(n => `<option${n === cur ? ' selected' : ''}>${esc(n)}</option>`).join('');
+}
+
+/* ============================================================
+   FORM: validation, add / edit / delete with undo
+   ============================================================ */
+function onTypeChange(){
+  const isOffice = $('fType').value === 'office';
+  $('courseLabel').innerHTML = isOffice
+    ? 'ملاحظة (اختياري)'
+    : 'المادة (الرقم والاسم) <span aria-hidden="true" style="color:var(--danger)">*</span>';
+  $('fCourse').placeholder = isOffice ? 'مثال: أو بموعد مسبق' : 'مثال: 5401103 مقدمة في البرمجة';
+  $('roomLabel').textContent = isOffice ? 'المكتب' : 'القاعة';
+  $('fRoom').placeholder = isOffice ? 'مثال: مكتب 314' : 'مثال: مختبر 207';
+  clearFieldErrors();
+}
+
+function markInvalid(inputId, errId){
+  $(inputId).classList.add('invalid');
+  $(errId).classList.add('show');
+}
+function clearFieldErrors(){
+  ['fFaculty','fCourse','fTime'].forEach(id => $(id).classList.remove('invalid'));
+  ['errFaculty','errCourse','errTime'].forEach(id => $(id).classList.remove('show'));
+}
+['fFaculty','fCourse','fTime'].forEach(id =>
+  $(id).addEventListener('input', clearFieldErrors));
+
+/* live duplicate/conflict warning while typing */
+function liveConflictCheck(){
+  const f = $('fFaculty').value.trim(), t = parseTime($('fTime').value);
+  const hint = $('conflictHint');
+  if(!f || !t){ hint.style.display = 'none'; return; }
+  const clash = rows.some((x, i) => i !== editIndex && x.f === f && (() => {
+    const xt = parseTime(x.t);
+    return xt && t[0] < xt[1] && xt[0] < t[1] && daysOverlap($('fDays').value, x.d);
+  })());
+  hint.textContent = clash ? '⚠ تنبيه: يوجد تعارض زمني مع موعد آخر لنفس الأستاذ' : '';
+  hint.style.display = clash ? 'inline' : 'none';
+}
+['fFaculty','fTime','fDays'].forEach(id => $(id).addEventListener('input', liveConflictCheck));
+$('fDays').addEventListener('change', liveConflictCheck);
+
+function saveEntry(){
+  clearFieldErrors();
+  const entry = {
+    k: $('fType').value === 'office' ? 'office' : '',
+    f: $('fFaculty').value.trim(),
+    n: $('fNum').value.trim(),
+    c: $('fCourse').value.trim(),
+    d: $('fDays').value.trim(),
+    t: $('fTime').value.trim(),
+    r: $('fRoom').value.trim()
+  };
+  /* if the number was typed inside the name field, split it automatically */
+  if(!entry.n){
+    const m = /^(\d{5,8})\s+(.+)$/.exec(entry.c);
+    if(m){ entry.n = m[1]; entry.c = m[2]; }
+  }
+  let ok = true;
+  if(!entry.f){ markInvalid('fFaculty','errFaculty'); ok = false; }
+  if(entry.k !== 'office' && !entry.c){ markInvalid('fCourse','errCourse'); ok = false; }
+  if(entry.k === 'office' && !entry.t){ markInvalid('fTime','errTime'); ok = false; }
+  if(!ok){
+    const firstInvalid = document.querySelector('input.invalid');
+    if(firstInvalid) firstInvalid.focus();
+    return;
+  }
+  if(editIndex >= 0){
+    rows[editIndex] = entry;
+    lastSavedIndex = editIndex;
+    toast('تم حفظ التعديل ✓');
+    cancelEdit();
+  } else {
+    rows.push(entry);
+    lastSavedIndex = rows.length - 1;
+    toast(entry.k === 'office' ? 'تمت إضافة الساعات المكتبية ✓' : 'تمت إضافة المحاضرة ✓');
+    ['fNum','fCourse','fTime','fRoom'].forEach(id => $(id).value = '');
+    $('fNum').focus();
+  }
+  $('conflictHint').style.display = 'none';
+  refreshDatalists(); render();
+}
+
+function editRow(i){
+  const x = rows[i];
+  $('fType').value = x.k === 'office' ? 'office' : 'lecture';
+  onTypeChange();
+  $('fFaculty').value = x.f; $('fNum').value = x.n || ''; $('fCourse').value = x.c;
+  $('fDays').value = x.d || ''; $('fTime').value = x.t; $('fRoom').value = x.r;
+  editIndex = i;
+  $('entryCard').classList.add('editing');
+  $('formTitle').textContent = (x.k === 'office' ? 'تعديل الساعات المكتبية' : 'تعديل المحاضرة') + ' — ' + x.f;
+  $('saveBtn').textContent = '💾 حفظ التعديل';
+  $('cancelBtn').style.display = '';
+  liveConflictCheck();
+  window.scrollTo({top:0, behavior:'smooth'});
+  $('fFaculty').focus();
+}
+
+function cancelEdit(){
+  editIndex = -1;
+  ['fFaculty','fNum','fCourse','fTime','fRoom'].forEach(id => $(id).value = '');
+  $('fDays').value = '';
+  $('fType').value = 'lecture';
+  onTypeChange();
+  $('entryCard').classList.remove('editing');
+  $('formTitle').textContent = 'إضافة محاضرة / ساعات مكتبية';
+  $('saveBtn').textContent = '➕ إضافة';
+  $('cancelBtn').style.display = 'none';
+  $('conflictHint').style.display = 'none';
+}
+
+/* delete with UNDO instead of blocking confirm dialog */
+function deleteRow(i){
+  lastDeleted = { entry: rows[i], index: i };
+  rows.splice(i, 1);
+  if(editIndex === i) cancelEdit();
+  else if(editIndex > i) editIndex--;
+  refreshDatalists(); render();
+  const x = lastDeleted.entry;
+  toast('تم حذف: ' + x.f + (x.c ? ' — ' + x.c : ''), false, '↩ تراجع', undoDelete);
+}
+function undoDelete(){
+  if(!lastDeleted) return;
+  rows.splice(Math.min(lastDeleted.index, rows.length), 0, lastDeleted.entry);
+  lastSavedIndex = Math.min(lastDeleted.index, rows.length - 1);
+  lastDeleted = null;
+  refreshDatalists(); render();
+  toast('تم استرجاع السجل ✓');
+}
+
+function clearAll(){
+  if(!rows.length) return;
+  if(!confirm('سيتم مسح جميع البيانات من الصفحة (' + rows.length + ' سجل).\nهل صدّرت نسخة CSV أولًا؟')) return;
+  rows = []; cancelEdit(); refreshDatalists(); render();
+  toast('تم مسح جميع البيانات');
+}
+
+/* ============================================================
+   KEYBOARD SUPPORT (check modifiers and return early)
+   ============================================================ */
+document.addEventListener('keydown', e => {
+  if(e.ctrlKey || e.metaKey || e.altKey) return;
+  const tag = document.activeElement ? document.activeElement.tagName : '';
+  const typing = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+  if(e.key === 'Escape' && editIndex >= 0){ cancelEdit(); return; }
+  if(e.key === '/' && !typing){ e.preventDefault(); $('searchBox').focus(); return; }
+});
+/* Enter inside form fields submits */
+['fFaculty','fNum','fCourse','fTime','fRoom'].forEach(id =>
+  $(id).addEventListener('keydown', e => {
+    if(e.key === 'Enter' && !e.ctrlKey && !e.metaKey && !e.altKey){ e.preventDefault(); saveEntry(); }
+  }));
+
+/* ============================================================
+   SEARCH
+   ============================================================ */
+function onSearch(){
+  $('searchWrap').classList.toggle('has-value', $('searchBox').value.length > 0);
+  render();
+}
+function clearSearch(){
+  $('searchBox').value = '';
+  onSearch();
+  $('searchBox').focus();
+}
+
+/* ============================================================
+   CSV IMPORT / EXPORT (RFC-4180 aware, UTF-8 BOM for Excel)
+   ============================================================ */
+function parseCSV(text){
+  text = text.replace(/^\uFEFF/, '');
+  const out = []; let row = [], field = '', inQ = false;
+  for(let i = 0; i < text.length; i++){
+    const ch = text[i];
+    if(inQ){
+      if(ch === '"'){ if(text[i+1] === '"'){ field += '"'; i++; } else inQ = false; }
+      else field += ch;
+    } else {
+      if(ch === '"') inQ = true;
+      else if(ch === ','){ row.push(field); field = ''; }
+      else if(ch === '\n' || ch === '\r'){
+        if(ch === '\r' && text[i+1] === '\n') i++;
+        row.push(field); field = '';
+        if(row.some(c => c.trim() !== '')) out.push(row);
+        row = [];
+      }
+      else field += ch;
+    }
+  }
+  row.push(field);
+  if(row.some(c => c.trim() !== '')) out.push(row);
+  return out;
+}
+
+$('csvFile').addEventListener('change', function(){
+  const file = this.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try{
+      const data = parseCSV(e.target.result);
+      if(data.length < 2){ toast('الملف فارغ أو غير صالح', true); return; }
+      const header = data[0].map(h => h.trim().toLowerCase());
+      const idx = name => header.indexOf(name);
+      const iF = idx('faculty'), iC = idx('course'), iT = idx('time'),
+            iR = idx('classroom'), iD = idx('days'), iK = idx('type');
+      const iN = ['courseno','course no','course_no','coursenumber','course number','code','رقم المادة']
+        .map(idx).find(v => v >= 0) ?? -1;
+      if(iF < 0){ toast('لم يتم العثور على عمود Faculty في الملف', true); return; }
+      /* optional header metadata columns: take first non-empty value */
+      const meta = (col, elId) => {
+        const j = idx(col);
+        if(j < 0) return;
+        const v = data.slice(1).map(r => (r[j] || '').trim()).find(Boolean);
+        if(v) $(elId).textContent = v;
+      };
+      meta('college', 'facAr');   meta('collegeen', 'facEn');
+      meta('university', 'uniAr'); meta('universityen', 'uniEn');
+      const imported = data.slice(1).map(r => {
+        const typeVal = iK >= 0 ? (r[iK] || '').trim().toLowerCase() : '';
+        let n = iN >= 0 ? (r[iN] || '').trim() : '';
+        let c = iC >= 0 ? (r[iC] || '').trim() : '';
+        if(!n){
+          const m = /^(\d{5,8})\s+(.+)$/.exec(c);
+          if(m){ n = m[1]; c = m[2]; }
+        }
+        return {
+          k: (typeVal.includes('office') || typeVal.includes('مكتب')) ? 'office' : '',
+          f: (r[iF] || '').trim(),
+          n, c,
+          d: iD >= 0 ? (r[iD] || '').trim() : '',
+          t: iT >= 0 ? (r[iT] || '').trim() : '',
+          r: iR >= 0 ? (r[iR] || '').trim() : ''
+        };
+      }).filter(x => x.f || x.c);
+      if(!imported.length){ toast('لا توجد صفوف بيانات في الملف', true); return; }
+      const replace = rows.length === 0 ? true
+        : confirm('تم قراءة ' + imported.length + ' سجل.\n\nموافق = استبدال البيانات الحالية\nإلغاء = إضافتها إلى البيانات الحالية');
+      rows = replace ? imported : rows.concat(imported);
+      cancelEdit(); refreshDatalists(); render();
+      toast('تم استيراد ' + imported.length + ' سجل ✓');
+    } catch(err){
+      toast('تعذّر قراءة الملف: ' + err.message, true);
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+  this.value = '';
+});
+
+function csvField(v){
+  v = String(v ?? '');
+  return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+}
+
+function exportCSV(){
+  if(!rows.length){ toast('لا توجد بيانات للتصدير', true); return; }
+  const hasDays = rows.some(x => x.d);
+  const hasType = rows.some(x => x.k === 'office');
+  const header = ['Faculty','CourseNo','Course'];
+  if(hasType) header.push('Type');
+  if(hasDays) header.push('Days');
+  header.push('Time','Classroom');
+  const lines = [header.join(',')];
+  rows.forEach(x => {
+    const vals = [x.f, x.n || '', x.c];
+    if(hasType) vals.push(x.k === 'office' ? 'Office Hours' : 'Lecture');
+    if(hasDays) vals.push(x.d);
+    vals.push(x.t, x.r);
+    lines.push(vals.map(csvField).join(','));
+  });
+  const blob = new Blob(['\uFEFF' + lines.join('\r\n')], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'faculty_timetable.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('تم تنزيل الملف ✓');
+}
+
+/* ============================================================
+   RENDERING
+   ============================================================ */
+function setView(v){
+  view = v;
+  $('btnTable').setAttribute('aria-pressed', v === 'table');
+  $('btnCards').setAttribute('aria-pressed', v === 'cards');
+  render();
+}
+
+function setSort(key){
+  if(sortKey === key) sortDir = -sortDir;
+  else { sortKey = key; sortDir = 1; }
+  render();
+}
+
+function filteredRows(){
+  const fac = $('filterFaculty').value;
+  const typ = $('filterType').value;
+  const q = $('searchBox').value.trim();
+  return rows
+    .map((x, i) => ({...x, _i: i}))
+    .filter(x => (!fac || x.f === fac) &&
+      (!typ || (typ === 'office' ? x.k === 'office' : x.k !== 'office')) &&
+      (!q || [x.f, x.n, x.c, x.t, x.r, x.d].join(' ').includes(q)));
+}
+
+function renderStats(conflicts){
+  const nFac = new Set(rows.map(x => x.f).filter(Boolean)).size;
+  const nLec = rows.filter(x => x.k !== 'office').length;
+  const nOff = rows.length - nLec;
+  const nRoom = new Set(rows.map(x => x.r).filter(v => v && v !== 'غير محدد')).size;
+  let html =
+    '<span class="stat">أعضاء هيئة التدريس: <b>' + nFac + '</b></span>' +
+    '<span class="stat">المحاضرات: <b>' + nLec + '</b></span>' +
+    '<span class="stat">الساعات المكتبية: <b>' + nOff + '</b></span>' +
+    '<span class="stat">القاعات المستخدمة: <b>' + nRoom + '</b></span>';
+  if(conflicts.size)
+    html += '<span class="stat warn-stat" title="مواعيد متداخلة لنفس الأستاذ">⚠ تعارضات زمنية: <b>' + conflicts.size + '</b></span>';
+  $('stats').innerHTML = html;
+}
+
+function sortInd(key){
+  if(sortKey !== key) return '<span class="sort-ind">↕</span>';
+  return '<span class="sort-ind">' + (sortDir === 1 ? '▲' : '▼') + '</span>';
+}
+function ariaSort(key){
+  return sortKey === key ? (sortDir === 1 ? 'ascending' : 'descending') : 'none';
+}
+
+function render(){
+  const conflicts = findConflicts();
+  renderStats(conflicts);
+
+  const list = filteredRows();
+  const anyDays = rows.some(x => x.d);
+  const fac = $('filterFaculty').value, typ = $('filterType').value, q = $('searchBox').value.trim();
+  const filtered = fac || typ || q;
+  $('counter').innerHTML = (list.length === rows.length
+    ? 'إجمالي السجلات: ' + rows.length
+    : 'المعروض: <b>' + list.length + '</b> من أصل ' + rows.length) +
+    (filtered ? ' <span class="filter-note">(مصفّى — الطباعة تشمل المعروض فقط)</span>' : '');
+
+  if(!list.length){
+    $('content').innerHTML =
+      '<div class="empty">' +
+      (rows.length
+        ? 'لا توجد نتائج مطابقة للتصفية الحالية.' +
+          '<div class="empty-actions"><button onclick="resetFilters()">إظهار الكل</button></div>'
+        : 'لا توجد بيانات بعد.' +
+          '<div class="empty-actions">' +
+          '<button class="primary" onclick="document.getElementById(\'fFaculty\').focus()">➕ أضف أول محاضرة</button>' +
+          '<button onclick="document.getElementById(\'csvFile\').click()">📥 استورد ملف CSV</button></div>') +
+      '</div>';
+    return;
+  }
+
+  if(view === 'table') renderTable(list, anyDays, conflicts);
+  else renderCards(list, conflicts);
+
+  /* flash the last saved row for visible feedback */
+  if(lastSavedIndex >= 0){
+    const el = document.querySelector('[data-row="' + lastSavedIndex + '"]');
+    if(el){ el.classList.add('flash'); }
+    lastSavedIndex = -1;
+  }
+}
+
+function resetFilters(){
+  $('filterFaculty').value = ''; $('filterType').value = '';
+  $('searchBox').value = ''; $('searchWrap').classList.remove('has-value');
+  render();
+}
+
+function cmp(a, b, key){
+  if(key === 'k') return ((a.k === 'office') - (b.k === 'office'));
+  return String(a[key]).localeCompare(String(b[key]), 'ar');
+}
+
+function renderTable(list, anyDays, conflicts){
+  const sorted = [...list].sort((a, b) =>
+    sortDir * cmp(a, b, sortKey) ||
+    a.f.localeCompare(b.f, 'ar') ||
+    ((a.k === 'office') - (b.k === 'office')) ||
+    a.t.localeCompare(b.t));
+  let html = '<div class="table-wrap"><table><thead><tr>' +
+    '<th class="sortable" role="columnheader" aria-sort="' + ariaSort('f') + '" onclick="setSort(\'f\')" title="ترتيب حسب الاسم">عضو هيئة التدريس ' + sortInd('f') + '</th>' +
+    '<th class="sortable" aria-sort="' + ariaSort('n') + '" onclick="setSort(\'n\')" title="ترتيب حسب رقم المادة">رقم المادة ' + sortInd('n') + '</th>' +
+    '<th class="sortable" aria-sort="' + ariaSort('c') + '" onclick="setSort(\'c\')" title="ترتيب حسب المادة">المادة / النشاط ' + sortInd('c') + '</th>' +
+    (anyDays ? '<th>الأيام</th>' : '') +
+    '<th class="sortable" aria-sort="' + ariaSort('t') + '" onclick="setSort(\'t\')" title="ترتيب حسب الوقت">الوقت ' + sortInd('t') + '</th>' +
+    '<th class="sortable" aria-sort="' + ariaSort('r') + '" onclick="setSort(\'r\')" title="ترتيب حسب القاعة">القاعة / المكتب ' + sortInd('r') + '</th>' +
+    '<th class="actions-col">إجراءات</th></tr></thead><tbody>';
+  let prev = null;
+  sorted.forEach(x => {
+    const showName = sortKey !== 'f' || x.f !== prev; prev = x.f;
+    const isOff = x.k === 'office';
+    const hasConflict = conflicts.has(x._i);
+    const courseCell = (isOff
+      ? '<span class="badge-office">ساعات مكتبية</span>' + (x.c ? ' ' + esc(x.c) : '')
+      : esc(x.c)) +
+      (hasConflict ? ' <span class="conflict" title="يتداخل زمنيًا مع موعد آخر لنفس الأستاذ">⚠ تعارض</span>' : '');
+    html += '<tr data-row="' + x._i + '">' +
+      '<td class="faculty-name">' + (showName ? esc(x.f) : '') + '</td>' +
+      '<td><span class="course-code">' + esc(x.n || '—') + '</span></td>' +
+      '<td>' + courseCell + '</td>' +
+      (anyDays ? '<td>' + esc(x.d) + '</td>' : '') +
+      '<td><span class="time-chip' + (isOff ? ' office' : '') + '">' + esc(x.t) + '</span></td>' +
+      '<td>' + esc(x.r) + '</td>' +
+      '<td><div class="row-actions">' +
+        '<button class="small" onclick="editRow(' + x._i + ')" aria-label="تعديل ' + esc(x.c || x.f) + '">تعديل</button>' +
+        '<button class="small danger-btn" onclick="deleteRow(' + x._i + ')" aria-label="حذف ' + esc(x.c || x.f) + '">حذف</button>' +
+      '</div></td></tr>';
+  });
+  $('content').innerHTML = html + '</tbody></table></div>';
+}
+
+function renderCards(list, conflicts){
+  const groups = {};
+  list.forEach(x => (groups[x.f] = groups[x.f] || []).push(x));
+  const names = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'ar'));
+  let html = '<div class="faculty-grid">';
+  names.forEach(name => {
+    const all = groups[name];
+    const lectures = all.filter(x => x.k !== 'office').sort((a, b) => a.t.localeCompare(b.t));
+    const office   = all.filter(x => x.k === 'office').sort((a, b) => a.t.localeCompare(b.t));
+    html += '<div class="fcard"><h3><span>' + esc(name) + '</span>' +
+      '<span class="load">' + lectures.length + ' محاضرة' + (office.length ? ' + ساعات مكتبية' : '') + '</span></h3><ul>';
+    const li = (x, isOff) => '<li data-row="' + x._i + '">' +
+      '<span class="time-chip' + (isOff ? ' office' : '') + '">' + esc(x.t) + '</span>' +
+      '<span class="c-name">' +
+        (x.n ? '<span class="course-code">' + esc(x.n) + '</span> ' : '') +
+        (isOff ? '<span class="badge-office">ساعات مكتبية</span>' + (x.c ? ' ' + esc(x.c) : '') : esc(x.c)) +
+        (x.d ? ' <span class="course-code">(' + esc(x.d) + ')</span>' : '') +
+        (conflicts.has(x._i) ? ' <span class="conflict">⚠</span>' : '') +
+      '</span>' +
+      '<span class="c-room">' + esc(x.r) + '</span>' +
+      '</li>';
+    lectures.forEach(x => html += li(x, false));
+    office.forEach(x => html += li(x, true));
+    html += '</ul><div class="card-print"><button class="small" onclick="printOne(' +
+      JSON.stringify(name).replace(/"/g, '&quot;') + ')" title="طباعة جدول هذا الأستاذ فقط">🖨️ طباعة هذا الجدول</button></div></div>';
+  });
+  $('content').innerHTML = html + '</div>';
+}
+
+/* print a single faculty member directly from their card */
+function printOne(name){
+  $('filterFaculty').value = name;
+  render();
+  setTimeout(() => window.print(), 60);
+}
+
+/* ============================================================
+   LOGO — loads logo.png automatically if placed beside this file
+   (e.g., in the same GitHub repo); or choose one via the button
+   ============================================================ */
+$('logoFile').addEventListener('change', function(){
+  const file = this.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = $('logoImg');
+    img.src = e.target.result;
+    img.dataset.missing = '';
+    img.style.display = '';
+    toast('تم تحميل الشعار ✓ سيظهر في الترويسة وصفحات الطباعة');
+  };
+  reader.readAsDataURL(file);
+  this.value = '';
+});
+
+/* ============================================================
+   SEMESTER / YEAR
+   ============================================================ */
+function updateSemester(){
+  const year = $('acadYear').value.trim();
+  $('semesterPrint').textContent = $('semester').value +
+    (year ? ' — للعام الجامعي ' + year : '');
+}
+
+/* ============================================================
+   PRINT: "الجميع" → one page per faculty member
+   ============================================================ */
+function buildPrintAll(){
+  const semLine = $('semesterPrint').textContent;
+  const logo = $('logoImg');
+  const hasLogo = logo && !logo.dataset.missing && logo.src;
+  const logoHtml = hasLogo ? '<div class="pp-logo"><img src="' + logo.src + '" alt=""></div>' : '';
+  const uniAr = esc($('uniAr').textContent), facAr = esc($('facAr').textContent);
+  const uniEn = esc($('uniEn').textContent), facEn = esc($('facEn').textContent);
+  const groups = {};
+  filteredRows().forEach(x => (groups[x.f] = groups[x.f] || []).push(x));
+  const names = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'ar'));
+  const anyDays = rows.some(x => x.d);
+  let html = '';
+  names.forEach(name => {
+    const items = groups[name].sort((a, b) =>
+      (a.k === 'office') - (b.k === 'office') || a.t.localeCompare(b.t));
+    html += '<section class="print-page">' +
+      '<div class="pp-uni">' +
+        '<div class="ar"><div class="uni">' + uniAr + '</div>' +
+        '<div class="fac">' + facAr + '</div></div>' +
+        logoHtml +
+        '<div class="en"><div class="uni">' + uniEn + '</div>' +
+        '<div class="fac">' + facEn + '</div></div>' +
+      '</div>' +
+      '<div class="pp-sem">' + esc(semLine) + '</div>' +
+      '<h2 class="pp-name">' + esc(name) + '</h2>' +
+      '<table><thead><tr><th style="width:7rem;">رقم المادة</th><th>المادة / النشاط</th>' +
+      (anyDays ? '<th>الأيام</th>' : '') +
+      '<th>الوقت</th><th>القاعة / المكتب</th></tr></thead><tbody>';
+    items.forEach(x => {
+      const isOff = x.k === 'office';
+      const courseCell = isOff
+        ? '<span class="badge-office">ساعات مكتبية</span>' + (x.c ? ' ' + esc(x.c) : '')
+        : esc(x.c);
+      html += '<tr><td><span class="course-code">' + esc(x.n || '—') + '</span></td>' +
+        '<td>' + courseCell + '</td>' +
+        (anyDays ? '<td>' + esc(x.d) + '</td>' : '') +
+        '<td><span class="time-chip' + (isOff ? ' office' : '') + '">' + esc(x.t) + '</span></td>' +
+        '<td>' + esc(x.r) + '</td></tr>';
+    });
+    const nLec = items.filter(x => x.k !== 'office').length;
+    const nOff = items.length - nLec;
+    html += '</tbody></table>' +
+      '<div class="pp-total">عدد المحاضرات: ' + nLec +
+      (nOff ? ' — الساعات المكتبية: ' + nOff : '') + '</div>' +
+      '</section>';
+  });
+  $('printAll').innerHTML = html;
+}
+
+window.addEventListener('beforeprint', () => {
+  if($('filterFaculty').value === ''){
+    buildPrintAll();
+    document.body.classList.add('print-per-faculty');
+  }
+});
+window.addEventListener('afterprint', () => {
+  document.body.classList.remove('print-per-faculty');
+  $('printAll').innerHTML = '';
+});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+refreshDatalists();
+updateSemester();
+render();
+</script>
+</body>
+</html>
