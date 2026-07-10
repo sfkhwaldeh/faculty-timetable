@@ -137,6 +137,17 @@ kbd{
   border:1px solid var(--line); border-bottom-width:2px; border-radius:0.3rem;
   padding:0 0.35rem; color:var(--muted); background:#fff;
 }
+.day-chips{ display:flex; flex-wrap:wrap; gap:0.35rem; }
+.day-chip{
+  font-size:0.88rem; font-weight:700;
+  min-height:2.6rem; padding:0.3rem 0.7rem;
+  border:1.5px solid var(--line); color:var(--muted);
+  border-radius:2rem;
+}
+.day-chip[aria-pressed="true"]{
+  border-color:var(--accent); color:#fff; background:var(--accent);
+}
+.day-chip[aria-pressed="true"]:hover{ background:var(--accent-dark); }
 
 /* ============================================================
    4. ENTRY FORM CARD
@@ -474,20 +485,14 @@ td .row-actions{ display:flex; gap:0.35rem; }
         <div class="field-error" id="errCourse" role="alert">يرجى إدخال اسم المادة</div>
       </div>
       <div>
-        <label for="fDays">الأيام (اختياري)</label>
-        <select id="fDays">
-          <option value="">— غير محدد —</option>
-          <option>ح ث خ</option>
-          <option>ن ر</option>
-          <option>ح ث</option>
-          <option>ث خ</option>
-          <option>الأحد</option>
-          <option>الاثنين</option>
-          <option>الثلاثاء</option>
-          <option>الأربعاء</option>
-          <option>الخميس</option>
-          <option>يوميًا</option>
-        </select>
+        <label id="daysLabel">الأيام (اختر يومًا أو أكثر)</label>
+        <div class="day-chips" role="group" aria-labelledby="daysLabel" id="dayChips">
+          <button type="button" class="day-chip" data-code="ح" aria-pressed="false">الأحد</button>
+          <button type="button" class="day-chip" data-code="ن" aria-pressed="false">الاثنين</button>
+          <button type="button" class="day-chip" data-code="ث" aria-pressed="false">الثلاثاء</button>
+          <button type="button" class="day-chip" data-code="ر" aria-pressed="false">الأربعاء</button>
+          <button type="button" class="day-chip" data-code="خ" aria-pressed="false">الخميس</button>
+        </div>
       </div>
       <div>
         <label for="fTime">الوقت</label>
@@ -704,6 +709,27 @@ function clearFieldErrors(){
 ['fFaculty','fCourse','fTime'].forEach(id =>
   $(id).addEventListener('input', clearFieldErrors));
 
+/* ---- multi-day chips ---- */
+const DAY_NAMES = {'ح':'الأحد','ن':'الاثنين','ث':'الثلاثاء','ر':'الأربعاء','خ':'الخميس'};
+function getDays(){
+  return [...document.querySelectorAll('.day-chip[aria-pressed="true"]')]
+    .map(b => b.dataset.code).join(' ');
+}
+function setDays(str){
+  const codes = (str || '').trim().split(/\s+/);
+  document.querySelectorAll('.day-chip').forEach(b =>
+    b.setAttribute('aria-pressed', codes.includes(b.dataset.code) ? 'true' : 'false'));
+}
+function fmtDays(str){
+  if(!str) return '';
+  return str.trim().split(/\s+/).map(c => DAY_NAMES[c] || c).join('، ');
+}
+document.querySelectorAll('.day-chip').forEach(b =>
+  b.addEventListener('click', () => {
+    b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') !== 'true');
+    liveConflictCheck();
+  }));
+
 /* live duplicate/conflict warning while typing */
 function liveConflictCheck(){
   const f = $('fFaculty').value.trim(), t = parseTime($('fTime').value);
@@ -711,13 +737,12 @@ function liveConflictCheck(){
   if(!f || !t){ hint.style.display = 'none'; return; }
   const clash = rows.some((x, i) => i !== editIndex && x.f === f && (() => {
     const xt = parseTime(x.t);
-    return xt && t[0] < xt[1] && xt[0] < t[1] && daysOverlap($('fDays').value, x.d);
+    return xt && t[0] < xt[1] && xt[0] < t[1] && daysOverlap(getDays(), x.d);
   })());
   hint.textContent = clash ? '⚠ تنبيه: يوجد تعارض زمني مع موعد آخر لنفس الأستاذ' : '';
   hint.style.display = clash ? 'inline' : 'none';
 }
-['fFaculty','fTime','fDays'].forEach(id => $(id).addEventListener('input', liveConflictCheck));
-$('fDays').addEventListener('change', liveConflictCheck);
+['fFaculty','fTime'].forEach(id => $(id).addEventListener('input', liveConflictCheck));
 
 function saveEntry(){
   clearFieldErrors();
@@ -726,7 +751,7 @@ function saveEntry(){
     f: $('fFaculty').value.trim(),
     n: $('fNum').value.trim(),
     c: $('fCourse').value.trim(),
-    d: $('fDays').value.trim(),
+    d: getDays(),
     t: $('fTime').value.trim(),
     r: $('fRoom').value.trim()
   };
@@ -765,7 +790,7 @@ function editRow(i){
   $('fType').value = x.k === 'office' ? 'office' : 'lecture';
   onTypeChange();
   $('fFaculty').value = x.f; $('fNum').value = x.n || ''; $('fCourse').value = x.c;
-  $('fDays').value = x.d || ''; $('fTime').value = x.t; $('fRoom').value = x.r;
+  setDays(x.d); $('fTime').value = x.t; $('fRoom').value = x.r;
   editIndex = i;
   $('entryCard').classList.add('editing');
   $('formTitle').textContent = (x.k === 'office' ? 'تعديل الساعات المكتبية' : 'تعديل المحاضرة') + ' — ' + x.f;
@@ -779,7 +804,7 @@ function editRow(i){
 function cancelEdit(){
   editIndex = -1;
   ['fFaculty','fNum','fCourse','fTime','fRoom'].forEach(id => $(id).value = '');
-  $('fDays').value = '';
+  setDays('');
   $('fType').value = 'lecture';
   onTypeChange();
   $('entryCard').classList.remove('editing');
@@ -1066,7 +1091,7 @@ function renderTable(list, anyDays, conflicts){
     '<th class="sortable" role="columnheader" aria-sort="' + ariaSort('f') + '" onclick="setSort(\'f\')" title="ترتيب حسب الاسم">عضو هيئة التدريس ' + sortInd('f') + '</th>' +
     '<th class="sortable" aria-sort="' + ariaSort('n') + '" onclick="setSort(\'n\')" title="ترتيب حسب رقم المادة">رقم المادة ' + sortInd('n') + '</th>' +
     '<th class="sortable" aria-sort="' + ariaSort('c') + '" onclick="setSort(\'c\')" title="ترتيب حسب المادة">المادة / النشاط ' + sortInd('c') + '</th>' +
-    (anyDays ? '<th>الأيام</th>' : '') +
+    '<th>الأيام</th>' +
     '<th class="sortable" aria-sort="' + ariaSort('t') + '" onclick="setSort(\'t\')" title="ترتيب حسب الوقت">الوقت ' + sortInd('t') + '</th>' +
     '<th class="sortable" aria-sort="' + ariaSort('r') + '" onclick="setSort(\'r\')" title="ترتيب حسب القاعة">القاعة / المكتب ' + sortInd('r') + '</th>' +
     '<th class="actions-col">إجراءات</th></tr></thead><tbody>';
@@ -1083,7 +1108,7 @@ function renderTable(list, anyDays, conflicts){
       '<td class="faculty-name">' + (showName ? esc(x.f) : '') + '</td>' +
       '<td><span class="course-code">' + esc(x.n || '—') + '</span></td>' +
       '<td>' + courseCell + '</td>' +
-      (anyDays ? '<td>' + esc(x.d) + '</td>' : '') +
+      '<td>' + (x.d ? esc(fmtDays(x.d)) : '<span class="course-code">—</span>') + '</td>' +
       '<td><span class="time-chip' + (isOff ? ' office' : '') + '">' + esc(x.t) + '</span></td>' +
       '<td>' + esc(x.r) + '</td>' +
       '<td><div class="row-actions">' +
@@ -1110,7 +1135,7 @@ function renderCards(list, conflicts){
       '<span class="c-name">' +
         (x.n ? '<span class="course-code">' + esc(x.n) + '</span> ' : '') +
         (isOff ? '<span class="badge-office">ساعات مكتبية</span>' + (x.c ? ' ' + esc(x.c) : '') : esc(x.c)) +
-        (x.d ? ' <span class="course-code">(' + esc(x.d) + ')</span>' : '') +
+        (x.d ? ' <span class="course-code">(' + esc(fmtDays(x.d)) + ')</span>' : '') +
         (conflicts.has(x._i) ? ' <span class="conflict">⚠</span>' : '') +
       '</span>' +
       '<span class="c-room">' + esc(x.r) + '</span>' +
@@ -1187,7 +1212,7 @@ function buildPrintAll(){
       '<div class="pp-sem">' + esc(semLine) + '</div>' +
       '<h2 class="pp-name">' + esc(name) + '</h2>' +
       '<table><thead><tr><th style="width:7rem;">رقم المادة</th><th>المادة / النشاط</th>' +
-      (anyDays ? '<th>الأيام</th>' : '') +
+      '<th>الأيام</th>' +
       '<th>الوقت</th><th>القاعة / المكتب</th></tr></thead><tbody>';
     items.forEach(x => {
       const isOff = x.k === 'office';
@@ -1196,7 +1221,7 @@ function buildPrintAll(){
         : esc(x.c);
       html += '<tr><td><span class="course-code">' + esc(x.n || '—') + '</span></td>' +
         '<td>' + courseCell + '</td>' +
-        (anyDays ? '<td>' + esc(x.d) + '</td>' : '') +
+        '<td>' + (x.d ? esc(fmtDays(x.d)) : '—') + '</td>' +
         '<td><span class="time-chip' + (isOff ? ' office' : '') + '">' + esc(x.t) + '</span></td>' +
         '<td>' + esc(x.r) + '</td></tr>';
     });
