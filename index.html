@@ -502,6 +502,7 @@ td .row-actions{ display:flex; gap:0.35rem; }
       <div>
         <label id="daysLabel">الأيام (اختر يومًا أو أكثر)</label>
         <div class="day-chips" role="group" aria-labelledby="daysLabel" id="dayChips">
+          <button type="button" class="day-chip all-days-chip" id="allDaysChip" aria-pressed="false">جميع الأيام</button>
           <button type="button" class="day-chip" data-code="ح" aria-pressed="false">الأحد</button>
           <button type="button" class="day-chip" data-code="ن" aria-pressed="false">الاثنين</button>
           <button type="button" class="day-chip" data-code="ث" aria-pressed="false">الثلاثاء</button>
@@ -726,22 +727,49 @@ function clearFieldErrors(){
 
 /* ---- multi-day chips ---- */
 const DAY_NAMES = {'ح':'الأحد','ن':'الاثنين','ث':'الثلاثاء','ر':'الأربعاء','خ':'الخميس'};
+const DAY_CODES = Object.keys(DAY_NAMES);
+
+function individualDayChips(){
+  return [...document.querySelectorAll('.day-chip[data-code]')];
+}
+
+function syncAllDaysChip(){
+  const allSelected = individualDayChips().every(b => b.getAttribute('aria-pressed') === 'true');
+  $('allDaysChip').setAttribute('aria-pressed', allSelected ? 'true' : 'false');
+}
+
 function getDays(){
-  return [...document.querySelectorAll('.day-chip[aria-pressed="true"]')]
+  return individualDayChips()
+    .filter(b => b.getAttribute('aria-pressed') === 'true')
     .map(b => b.dataset.code).join(' ');
 }
+
 function setDays(str){
-  const codes = (str || '').trim().split(/\s+/);
-  document.querySelectorAll('.day-chip').forEach(b =>
+  const codes = (str || '').trim().split(/\s+/).filter(Boolean);
+  individualDayChips().forEach(b =>
     b.setAttribute('aria-pressed', codes.includes(b.dataset.code) ? 'true' : 'false'));
+  syncAllDaysChip();
 }
+
 function fmtDays(str){
   if(!str) return '';
-  return str.trim().split(/\s+/).map(c => DAY_NAMES[c] || c).join('، ');
+  const codes = str.trim().split(/\s+/).filter(Boolean);
+  if(DAY_CODES.every(code => codes.includes(code))) return 'الأحد–الخميس';
+  return codes.map(c => DAY_NAMES[c] || c).join('، ');
 }
-document.querySelectorAll('.day-chip').forEach(b =>
+
+$('allDaysChip').addEventListener('click', () => {
+  const selectAll = $('allDaysChip').getAttribute('aria-pressed') !== 'true';
+  individualDayChips().forEach(b =>
+    b.setAttribute('aria-pressed', selectAll ? 'true' : 'false'));
+  syncAllDaysChip();
+  liveConflictCheck();
+});
+
+individualDayChips().forEach(b =>
   b.addEventListener('click', () => {
     b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') !== 'true');
+    syncAllDaysChip();
     liveConflictCheck();
   }));
 
